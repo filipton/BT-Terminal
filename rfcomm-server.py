@@ -6,7 +6,7 @@ import socket
 import sys
 import os
 
-VERSION = "0.8.1"
+VERSION = "0.8.2"
 
 class BashWrapper:
     def __init__(self):
@@ -79,6 +79,12 @@ while 1:
                         r = requests.get("https://api.github.com/repos/filipton/BT-Terminal/contents/rfcomm-server.py", allow_redirects=True)
                         open(sys.argv[0], 'wb').write(base64.b64decode(r.json()["content"]))
                         client.send("DONE... PLEASE RELOAD RFCOMM SERVER WITH COMMAND: 'reload'!\n".encode())
+                    elif data == "update-r":
+                        client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
+                        r = requests.get("https://api.github.com/repos/filipton/BT-Terminal/contents/rfcomm-server.py", allow_redirects=True)
+                        open(sys.argv[0], 'wb').write(base64.b64decode(r.json()["content"]))
+                        client.send("DONE... NOW RELOADING!\n".encode())
+                        os.execv(sys.executable, ['python3'] + sys.argv)
                     else:
                         client.send("TERMINAL MODE IS OFF!\n".encode())
     except KeyboardInterrupt:

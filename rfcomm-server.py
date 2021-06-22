@@ -6,7 +6,7 @@ import socket
 import sys
 import os
 
-VERSION = "0.8"
+VERSION = "0.8.1"
 
 class BashWrapper:
     def __init__(self):

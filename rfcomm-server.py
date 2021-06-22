@@ -1,11 +1,12 @@
 import subprocess
 import threading
 import requests
+import base64
 import socket
 import sys
 import os
 
-VERSION = "0.7"
+VERSION = "0.8"
 
 class BashWrapper:
     def __init__(self):
@@ -75,8 +76,8 @@ while 1:
                         client.send(f"CURRENT VERSION: {VERSION}\n".encode())
                     elif data == "update":
                         client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
-                        r = requests.get('https://raw.githubusercontent.com/filipton/BT-Terminal/main/rfcomm-server.py', allow_redirects=True)
-                        open(sys.argv[0], 'wb').write(r.content)
+                        r = requests.get("https://api.github.com/repos/filipton/BT-Terminal/contents/rfcomm-server.py", allow_redirects=True)
+                        open(sys.argv[0], 'wb').write(base64.b64decode(r.json()["content"]))
                         client.send("DONE... PLEASE RELOAD RFCOMM SERVER WITH COMMAND: 'reload'!\n".encode())
                     else:
                         client.send("TERMINAL MODE IS OFF!\n".encode())

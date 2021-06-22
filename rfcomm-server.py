@@ -3,10 +3,13 @@ import threading
 import requests
 import base64
 import socket
+import shutil
+import uuid
 import sys
 import os
+import re
 
-VERSION = "0.8.3"
+VERSION = "0.9"
 
 class BashWrapper:
     def __init__(self):
@@ -43,7 +46,15 @@ while 1:
     print("STARTING BLUETOOTH SOCKET...")
     termMode = False
     bw = None
-    hostMACAddress = 'B8:27:EB:42:39:9A' # The MAC address of a Bluetooth adapter on the server.
+    hostMACAddress = 'B8:27:EB:8F:F5:83' # The MAC address of a Bluetooth adapter on the server.
+
+    try:
+        infile = open(os.getcwd()+"/MAC", 'r')
+        hostMACAddress = infile.read()
+        infile.close()
+    except:
+        print(f"CANNOT FIND '{os.getcwd()}/MAC' FILE... PLEASE WRITE YOUR BLUETOOTH CARD MAC TO THIS FILE AND REBOOT SCRIPT. {sys.exc_info()[0]}")
+
     port = 1
     backlog = 1
     size = 1024
@@ -76,14 +87,20 @@ while 1:
                         client.send(f"CURRENT VERSION: {VERSION}\n".encode())
                     elif data == "update":
                         try:
+                            client.send("SAVING CURRENT VERSION FOR RESTORING...\n".encode())
+                            shutil.copy2(sys.argv[0], os.getcwd()+"/old.py")
                             client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
                             r = requests.get("https://api.github.com/repos/filipton/BT-Terminal/contents/rfcomm-server.py", allow_redirects=True)
                             open(sys.argv[0], 'wb').write(base64.b64decode(r.json()["content"]))
                             client.send("DONE... PLEASE RELOAD RFCOMM SERVER WITH COMMAND: 'reload'!\n".encode())
                         except requests.exceptions.ConnectionError:
                             client.send("NO INTERNET CONNECTION! CANT DOWNLOAD NEW UPDATE!\n".encode())
+                        except:
+                            client.send("ERROR WHILE TRYING TO UPDATE!\n".encode())
                     elif data == "update-r":
                         try:
+                            client.send("SAVING CURRENT VERSION FOR RESTORING...\n".encode())
+                            shutil.copy2(sys.argv[0], os.getcwd()+"/old.py")
                             client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
                             r = requests.get("https://api.github.com/repos/filipton/BT-Terminal/contents/rfcomm-server.py", allow_redirects=True)
                             open(sys.argv[0], 'wb').write(base64.b64decode(r.json()["content"]))
@@ -91,6 +108,17 @@ while 1:
                             os.execv(sys.executable, ['python3'] + sys.argv)
                         except requests.exceptions.ConnectionError:
                             client.send("NO INTERNET CONNECTION! CANT DOWNLOAD NEW UPDATE!\n".encode())
+                        except:
+                            client.send("ERROR WHILE TRYING TO UPDATE!\n".encode())
+                    elif data == "restore":
+                        client.send("RESTORING...\n".encode())
+                        shutil.copy2(os.getcwd()+"/old.py", sys.argv[0])
+                        client.send("DONE... PLEASE RELOAD RFCOMM SERVER WITH COMMAND: 'reload'!\n".encode())
+                    elif data == "restore-r":
+                        client.send("RESTORING...\n".encode())
+                        shutil.copy2(os.getcwd()+"/old.py", sys.argv[0])
+                        client.send("DONE... NOW RELOADING!\n".encode())
+                        os.execv(sys.executable, ['python3'] + sys.argv)
                     else:
                         client.send("TERMINAL MODE IS OFF!\n".encode())
     except KeyboardInterrupt:

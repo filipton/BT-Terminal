@@ -9,7 +9,8 @@ import sys
 import os
 import re
 
-VERSION = "0.9.1"
+VERSION = "1.0"
+UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
     def __init__(self):
@@ -87,6 +88,7 @@ while 1:
                         client.send(f"CURRENT VERSION: {VERSION}\n".encode())
                     elif data == "update":
                         try:
+                            open(UPDATE_TMP_FILE, 'a').close()
                             client.send("SAVING CURRENT VERSION FOR RESTORING...\n".encode())
                             shutil.copy2(sys.argv[0], os.getcwd()+"/old.py")
                             client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
@@ -99,6 +101,7 @@ while 1:
                             client.send("ERROR WHILE TRYING TO UPDATE!\n".encode())
                     elif data == "update-r":
                         try:
+                            open(UPDATE_TMP_FILE, 'a').close()
                             client.send("SAVING CURRENT VERSION FOR RESTORING...\n".encode())
                             shutil.copy2(sys.argv[0], os.getcwd()+"/old.py")
                             client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
@@ -119,6 +122,12 @@ while 1:
                         shutil.copy2(os.getcwd()+"/old.py", sys.argv[0])
                         client.send("DONE... NOW RELOADING!\n".encode())
                         os.execv(sys.executable, ['python3'] + sys.argv)
+                    elif data == "update-confirm":
+                        if os.path.exists(UPDATE_TMP_FILE):
+                            os.remove(UPDATE_TMP_FILE)
+                            client.send("UPDATE CONFIRMED!\n".encode())
+                        else:
+                            client.send("UPDATE FILE NOT FOUNDED! (MAYBE ALREADY CONFIRMED?)\n".encode())
                     else:
                         client.send("TERMINAL MODE IS OFF!\n".encode())
     except KeyboardInterrupt:

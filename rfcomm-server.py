@@ -9,7 +9,7 @@ import sys
 import os
 import re
 
-VERSION = "0.9"
+VERSION = "0.9.1"
 
 class BashWrapper:
     def __init__(self):
@@ -50,7 +50,7 @@ while 1:
 
     try:
         infile = open(os.getcwd()+"/MAC", 'r')
-        hostMACAddress = infile.read()
+        hostMACAddress = infile.read().strip()
         infile.close()
     except:
         print(f"CANNOT FIND '{os.getcwd()}/MAC' FILE... PLEASE WRITE YOUR BLUETOOTH CARD MAC TO THIS FILE AND REBOOT SCRIPT. {sys.exc_info()[0]}")

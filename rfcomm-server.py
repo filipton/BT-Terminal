@@ -9,8 +9,10 @@ import sys
 import os
 import re
 
-VERSION = "1.0"
+VERSION = "1.0-bug"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
+
+ghfdhgfdshgfds
 
 class BashWrapper:
     def __init__(self):

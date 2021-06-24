@@ -9,7 +9,7 @@ import sys
 import os
 import re
 
-VERSION = "1.1.1"
+VERSION = "1.2"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
@@ -46,6 +46,8 @@ class BashWrapper:
 while 1:
     print("STARTING BLUETOOTH SOCKET...")
     termMode = False
+    updateb64TerminalMode = False
+    updateb64Buffer = ''
     bw = None
     hostMACAddress = 'B8:27:EB:8F:F5:83' # The MAC address of a Bluetooth adapter on the server.
 
@@ -80,6 +82,27 @@ while 1:
                 if termMode == True:
                     bw.proc.stdin.write((data + '\n').encode())
                     bw.proc.stdin.flush()
+                elif updateb64TerminalMode == True:
+                    if data == "end":
+                        client.send("ABORTING UPDATE...\n".encode())
+                        updateb64Buffer = ''
+                        updateb64TerminalMode = False
+                    elif data == "confirm":
+                        client.send("UPDATE CONFIRMED!\n".encode())
+                        try:
+                            open(UPDATE_TMP_FILE, 'a').close()
+                            client.send("SAVING CURRENT VERSION FOR RESTORING...\n".encode())
+                            shutil.copy2(sys.argv[0], os.getcwd()+"/old.py")
+                            file = base64.b64decode(updateb64Buffer)
+                            open(sys.argv[0], 'wb').write(file)
+                            client.send("DONE... NOW RELOADING!\n".encode())
+                            os.execv(sys.executable, ['python3'] + sys.argv)
+                        except:
+                            client.send("ERROR WHILE TRYING TO UPDATE FROM B64!\n".encode())
+                    elif data == "show":
+                        client.send(base64.b64decode(updateb64Buffer))
+                    else:
+                        updateb64Buffer += data
                 else:
                     if data == "reload":
                         client.send("RELOADING RFCOMM SERVER... YOU NEED TO RECONNECT!\n".encode())
@@ -94,19 +117,6 @@ while 1:
                             client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
                             r = requests.get("https://api.github.com/repos/filipton/BT-Terminal/contents/rfcomm-server.py", allow_redirects=True)
                             open(sys.argv[0], 'wb').write(base64.b64decode(r.json()["content"]))
-                            client.send("DONE... PLEASE RELOAD RFCOMM SERVER WITH COMMAND: 'reload'!\n".encode())
-                        except requests.exceptions.ConnectionError:
-                            client.send("NO INTERNET CONNECTION! CANT DOWNLOAD NEW UPDATE!\n".encode())
-                        except:
-                            client.send("ERROR WHILE TRYING TO UPDATE!\n".encode())
-                    elif data == "update-r":
-                        try:
-                            open(UPDATE_TMP_FILE, 'a').close()
-                            client.send("SAVING CURRENT VERSION FOR RESTORING...\n".encode())
-                            shutil.copy2(sys.argv[0], os.getcwd()+"/old.py")
-                            client.send("DOWNLOADING LATEST VERSION OF RFCOMM SERVER...\n".encode())
-                            r = requests.get("https://api.github.com/repos/filipton/BT-Terminal/contents/rfcomm-server.py", allow_redirects=True)
-                            open(sys.argv[0], 'wb').write(base64.b64decode(r.json()["content"]))
                             client.send("DONE... NOW RELOADING!\n".encode())
                             os.execv(sys.executable, ['python3'] + sys.argv)
                         except requests.exceptions.ConnectionError:
@@ -114,10 +124,6 @@ while 1:
                         except:
                             client.send("ERROR WHILE TRYING TO UPDATE!\n".encode())
                     elif data == "restore":
-                        client.send("RESTORING...\n".encode())
-                        shutil.copy2(os.getcwd()+"/old.py", sys.argv[0])
-                        client.send("DONE... PLEASE RELOAD RFCOMM SERVER WITH COMMAND: 'reload'!\n".encode())
-                    elif data == "restore-r":
                         client.send("RESTORING...\n".encode())
                         shutil.copy2(os.getcwd()+"/old.py", sys.argv[0])
                         client.send("DONE... NOW RELOADING!\n".encode())
@@ -164,6 +170,9 @@ while 1:
                         client.send(f"UPTIME: {uptime}\n".encode())
 
                         client.send(f"=======================================================\n\n".encode())
+                    elif data == "updateb64":
+                        client.send("UPDATE TERMINAL IS NOW SELECTED! WRITE YOU BASE64 DATA THAN COMMAND 'show' TO SHOW DECODED UPDATE, 'confirm' TO CONFIRM UPDATE OR 'end' TO ABORT UPDATING!\n".encode())
+                        updateb64TerminalMode = True
                     else:
                         client.send("TERMINAL MODE IS OFF!\n".encode())
     except KeyboardInterrupt:

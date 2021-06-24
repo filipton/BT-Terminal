@@ -9,7 +9,7 @@ import sys
 import os
 import re
 
-VERSION = "1.0.1"
+VERSION = "1.1"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
@@ -128,6 +128,39 @@ while 1:
                             client.send("UPDATE CONFIRMED!\n".encode())
                         else:
                             client.send("UPDATE FILE NOT FOUNDED! (MAYBE ALREADY CONFIRMED?)\n".encode())
+                    elif data == "debug":
+                        client.send("DEBUG INFO:\n".encode())
+                        
+                        ls = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        ls.connect(("8.8.8.8", 80))
+                        LOCAL_IP = ls.getsockname()[0]
+                        ls.close()
+
+                        client.send(f"==================== NETOWRK INFO ====================\n".encode())
+                        client.send(f"LOCAL IP: {LOCAL_IP}\n".encode())
+
+                        try:
+                            r = requests.get("https://api.ipify.org", allow_redirects=True)
+                            client.send(f"CONNECTION STATUS: True ({r.text})\n".encode())
+                        except:
+                            client.send("CONNECTION STATUS: False\n".encode())
+                        client.send(f"=======================================================\n\n".encode())
+
+                        client.send(f"===================== SERVER INFO =====================\n".encode())
+                        client.send(f"CURRENT VERSION: {VERSION}\n".encode())
+                        
+                        if os.path.exists(UPDATE_TMP_FILE):
+                            client.send("UPDATE STATE: NOT CONFIRMED\n".encode())
+                        else:
+                            client.send("UPDATE STATE: CONFIRMED\n".encode())
+
+                        tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
+                        client.send(f"RAM USAGE: {used_m}MB/{tot_m}MB (FREE: {free_m}MB)\n".encode())
+
+                        uptime = os.popen('uptime -p').read()[:-1].replace('up ', '')
+                        client.send(f"UPTIME: {uptime}\n".encode())
+
+                        client.send(f"=======================================================\n\n".encode())
                     else:
                         client.send("TERMINAL MODE IS OFF!\n".encode())
     except KeyboardInterrupt:

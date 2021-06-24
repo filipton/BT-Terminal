@@ -9,7 +9,7 @@ import sys
 import os
 import re
 
-VERSION = "1.1"
+VERSION = "1.1.1"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
@@ -131,10 +131,13 @@ while 1:
                     elif data == "debug":
                         client.send("DEBUG INFO:\n".encode())
                         
-                        ls = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        ls.connect(("8.8.8.8", 80))
-                        LOCAL_IP = ls.getsockname()[0]
-                        ls.close()
+                        try:
+                            ls = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                            ls.connect(("8.8.8.8", 80))
+                            LOCAL_IP = ls.getsockname()[0]
+                            ls.close()
+                        except:
+                            LOCAL_IP = "NOT CONNECTED!"
 
                         client.send(f"==================== NETOWRK INFO ====================\n".encode())
                         client.send(f"LOCAL IP: {LOCAL_IP}\n".encode())

@@ -4,12 +4,11 @@ import requests
 import base64
 import socket
 import shutil
-import uuid
+import time
 import sys
 import os
-import re
 
-VERSION = "1.2"
+VERSION = "1.3"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
@@ -49,7 +48,7 @@ while 1:
     updateb64TerminalMode = False
     updateb64Buffer = ''
     bw = None
-    hostMACAddress = 'B8:27:EB:8F:F5:83' # The MAC address of a Bluetooth adapter on the server.
+    hostMACAddress = '' # The MAC address of a Bluetooth adapter on the server. (Or create file MAC with your BT Controller MAC Adress)
 
     try:
         infile = open(os.getcwd()+"/MAC", 'r')
@@ -137,6 +136,26 @@ while 1:
                     elif data == "debug":
                         client.send("DEBUG INFO:\n".encode())
                         
+                        client.send(f"===================== SERVER INFO =====================\n".encode())
+                        client.send(f"CURRENT VERSION: {VERSION}\n".encode())
+
+                        mod_date = time.ctime(os.path.getmtime(sys.argv[0]))
+                        client.send(f"MODIFIED DATE: {mod_date}\n".encode())
+                        
+                        if os.path.exists(UPDATE_TMP_FILE):
+                            client.send("UPDATE STATE: NOT CONFIRMED\n".encode())
+                        else:
+                            client.send("UPDATE STATE: CONFIRMED\n".encode())
+
+                        tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
+                        client.send(f"RAM USAGE: {used_m}MB/{tot_m}MB (FREE: {free_m}MB)\n".encode())
+
+                        uptime = os.popen('uptime -p').read()[:-1].replace('up ', '')
+                        client.send(f"UPTIME: {uptime}\n".encode())
+
+                        client.send(f"=======================================================\n\n".encode())
+
+
                         try:
                             ls = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                             ls.connect(("8.8.8.8", 80))
@@ -153,21 +172,14 @@ while 1:
                             client.send(f"CONNECTION STATUS: True ({r.text})\n".encode())
                         except:
                             client.send("CONNECTION STATUS: False\n".encode())
-                        client.send(f"=======================================================\n\n".encode())
 
-                        client.send(f"===================== SERVER INFO =====================\n".encode())
-                        client.send(f"CURRENT VERSION: {VERSION}\n".encode())
-                        
-                        if os.path.exists(UPDATE_TMP_FILE):
-                            client.send("UPDATE STATE: NOT CONFIRMED\n".encode())
-                        else:
-                            client.send("UPDATE STATE: CONFIRMED\n".encode())
-
-                        tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
-                        client.send(f"RAM USAGE: {used_m}MB/{tot_m}MB (FREE: {free_m}MB)\n".encode())
-
-                        uptime = os.popen('uptime -p').read()[:-1].replace('up ', '')
-                        client.send(f"UPTIME: {uptime}\n".encode())
+                        cmd = subprocess.Popen('sudo iwconfig wlan0', shell=True, stdout=subprocess.PIPE)
+                        for line in cmd.stdout:
+                            Line = str(line.decode())
+                            if 'Link Quality' in Line:
+                                client.send(f"{Line.lstrip(' ').strip()}\n".encode())
+                            elif 'Not-Associated' in Line:
+                                client.send("No Signal\n".encode())
 
                         client.send(f"=======================================================\n\n".encode())
                     elif data == "updateb64":

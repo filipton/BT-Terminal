@@ -8,7 +8,7 @@ import time
 import sys
 import os
 
-VERSION = "1.3"
+VERSION = "1.3.1"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
@@ -55,7 +55,8 @@ while 1:
         hostMACAddress = infile.read().strip()
         infile.close()
     except:
-        print(f"CANNOT FIND '{os.getcwd()}/MAC' FILE... PLEASE WRITE YOUR BLUETOOTH CARD MAC TO THIS FILE AND REBOOT SCRIPT. {sys.exc_info()[0]}")
+        print(f"CANNOT FIND '{os.getcwd()}/MAC' FILE... USING DEAFULT. PLEASE WRITE YOUR BLUETOOTH CARD MAC TO THIS FILE AND REBOOT SCRIPT. (Error: {sys.exc_info()[0]})")
+        hostMACAddress = subprocess.Popen("sudo hcitool dev | awk '/hci0/ {print $2}'", shell=True, stdout=subprocess.PIPE).stdout.readline().decode().strip()
 
     port = 1
     backlog = 1

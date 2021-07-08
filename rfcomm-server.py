@@ -8,7 +8,7 @@ import time
 import sys
 import os
 
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
@@ -168,12 +168,6 @@ while 1:
                         client.send(f"==================== NETOWRK INFO ====================\n".encode())
                         client.send(f"LOCAL IP: {LOCAL_IP}\n".encode())
 
-                        try:
-                            r = requests.get("https://api.ipify.org", allow_redirects=True)
-                            client.send(f"CONNECTION STATUS: True ({r.text})\n".encode())
-                        except:
-                            client.send("CONNECTION STATUS: False\n".encode())
-
                         cmd = subprocess.Popen('sudo iwconfig wlan0', shell=True, stdout=subprocess.PIPE)
                         for line in cmd.stdout:
                             Line = str(line.decode())
@@ -181,6 +175,12 @@ while 1:
                                 client.send(f"{Line.lstrip(' ').strip()}\n".encode())
                             elif 'Not-Associated' in Line:
                                 client.send("No Signal\n".encode())
+
+                        try:
+                            r = requests.get("https://api.ipify.org", allow_redirects=True)
+                            client.send(f"CONNECTION STATUS: True ({r.text})\n".encode())
+                        except:
+                            client.send("CONNECTION STATUS: False\n".encode())
 
                         client.send(f"=======================================================\n\n".encode())
                     elif data == "updateb64":

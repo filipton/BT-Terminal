@@ -8,7 +8,7 @@ import time
 import sys
 import os
 
-VERSION = "1.3.2"
+VERSION = "1.4"
 UPDATE_TMP_FILE = "/tmp/UPDATE"
 
 class BashWrapper:
@@ -172,9 +172,17 @@ while 1:
                         for line in cmd.stdout:
                             Line = str(line.decode())
                             if 'Link Quality' in Line:
-                                client.send(f"{Line.lstrip(' ').strip()}\n".encode())
+                                client.send(f"Wlan0: {Line.lstrip(' ').strip()}\n".encode())
                             elif 'Not-Associated' in Line:
-                                client.send("No Signal\n".encode())
+                                client.send("Wlan0: No Signal\n".encode())
+
+                        cmd2 = subprocess.Popen('sudo iwconfig wlan1', shell=True, stdout=subprocess.PIPE)
+                        for line in cmd2.stdout:
+                            Line = str(line.decode())
+                            if 'Link Quality' in Line:
+                                client.send(f"Wlan1: {Line.lstrip(' ').strip()}\n".encode())
+                            elif 'Not-Associated' in Line:
+                                client.send("Wlan1: No Signal\n".encode())
 
                         try:
                             r = requests.get("https://api.ipify.org", allow_redirects=True)
